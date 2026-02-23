@@ -10,12 +10,12 @@
     -moz-osx-font-smoothing: grayscale;
     -webkit-text-size-adjust: 100%;
 }
- 
+
 body {
     padding: 0;
     margin: 0;
 }
- 
+
 #app {
     background-color: #212228;
     background-image: linear-gradient(#292a30 0.1em, transparent 0.1em),
@@ -25,30 +25,183 @@ body {
     position: relative;
     overflow: auto;
 }
+
+/* ============================================================
+   CARD
+   ============================================================ */
+
 .card {
     width: 400px;
-    border-radius: 5px;
+    border-radius: 8px;
     position: absolute;
     cursor: pointer;
-    box-shadow: 0 1px 1px hsl(0deg 0% 0% / 0.075), 0 2px 2px hsl(0deg 0% 0% /
-                    0.075), 0 4px 4px hsl(0deg 0% 0% / 0.075), 0 8px 8px hsl(0deg
-                    0% 0% / 0.075), 0 16px 16px hsl(0deg 0% 0% / 0.075);
+    box-shadow:
+        0 1px 1px hsl(0deg 0% 0% / 0.07),
+        0 2px 2px hsl(0deg 0% 0% / 0.07),
+        0 4px 4px hsl(0deg 0% 0% / 0.07),
+        0 8px 8px hsl(0deg 0% 0% / 0.07),
+        0 16px 32px hsl(0deg 0% 0% / 0.1);
 }
+
+.card-minimized {
+    width: auto;
+    min-width: 220px;
+}
+
+/* ---- Card appear / disappear animations ---- */
+
+@keyframes cardAppear {
+    from {
+        opacity: 0;
+        transform: scale(0.82) translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes cardDisappear {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    to {
+        opacity: 0;
+        transform: scale(0.78) translateY(-8px);
+    }
+}
+
+.card-appear {
+    animation: cardAppear 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.card-deleting {
+    animation: cardDisappear 0.28s ease forwards;
+    pointer-events: none;
+}
+
+/* ============================================================
+   CARD HEADER
+   ============================================================ */
+
+.card-header {
+    background-color: #9bd1de;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    align-items: center;
+    padding: 5px 8px;
+    cursor: grab;
+    user-select: none;
+    position: relative;
+    min-height: 30px;
+    gap: 6px;
+}
+
+.card-minimized .card-header {
+    border-radius: 8px;
+}
+
+.card-header:active {
+    cursor: grabbing;
+}
+
+.card-header svg {
+    color: rgba(0, 0, 0, 0.45);
+    transition: color 0.15s, transform 0.15s;
+    display: block;
+}
+
+.card-header svg:hover {
+    color: rgba(0, 0, 0, 0.8);
+    transform: scale(1.15);
+}
+
+/* Left / right control groups */
+.card-controls {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+}
+
+.card-actions {
+    margin-left: auto;
+}
+
+/* Pin + Minimize buttons */
+.card-action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 3px 4px;
+    border-radius: 5px;
+    opacity: 0.4;
+    transition: opacity 0.15s, background 0.15s, color 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(0, 0, 0, 0.7);
+    line-height: 1;
+}
+
+.card-action-btn:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.card-action-btn.danger:hover {
+    background: rgba(200, 50, 50, 0.15);
+    color: #c0392b;
+    opacity: 1;
+}
+
+.card-action-btn.pinned {
+    opacity: 1;
+    color: rgba(0, 0, 0, 0.8);
+}
+
+/* Center timestamp */
+.card-timestamp {
+    font-size: 10px;
+    color: rgba(0, 0, 0, 0.38);
+    font-weight: 500;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
+    letter-spacing: 0.2px;
+}
+
+/* ============================================================
+   CARD BODY
+   ============================================================ */
 
 .card-body {
     padding: 1em;
-    border-radius: 0 0 5px 5px;
+    border-radius: 0 0 8px 8px;
 }
- 
+
 .card-body textarea {
     background-color: inherit;
     border: none;
     width: 100%;
     height: 100%;
     resize: none;
-    font-size: 16px;
+    font-size: 15px;
+    font-family: inherit;
+    line-height: 1.55;
+    box-sizing: border-box;
 }
- 
+
+.card-body textarea::placeholder {
+    color: rgba(0, 0, 0, 0.25);
+}
+
 textarea:focus {
     background-color: inherit;
     outline: none;
@@ -56,11 +209,163 @@ textarea:focus {
     height: 100%;
 }
 
-.card-header {
-    background-color: #9bd1de;
-    border-radius: 5px 5px 0 0;
+/* ============================================================
+   DELETE CONFIRMATION
+   ============================================================ */
+
+.delete-confirm {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 5px;
+    gap: 5px;
+    animation: fadeConfirm 0.15s ease;
+}
+
+@keyframes fadeConfirm {
+    from {
+        opacity: 0;
+        transform: scale(0.88);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.delete-confirm-text {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.delete-confirm-btn {
+    border: none;
+    border-radius: 5px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+.delete-confirm-btn:hover {
+    opacity: 0.75;
+}
+
+.delete-confirm-btn.yes {
+    background: #e05252;
+    color: #fff;
+}
+
+.delete-confirm-btn.no {
+    background: rgba(0, 0, 0, 0.13);
+    color: rgba(0, 0, 0, 0.65);
+}
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+
+.empty-state {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+    user-select: none;
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, calc(-50% + 12px));
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
+}
+
+.empty-icon {
+    font-size: 64px;
+    display: block;
+    margin-bottom: 16px;
+    opacity: 0.3;
+}
+
+.empty-title {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 8px;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.empty-sub {
+    font-size: 14px;
+    margin: 0 0 12px;
+    color: rgba(255, 255, 255, 0.18);
+}
+
+.empty-hint {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.14);
+    margin: 0;
+}
+
+kbd {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 11px;
+    font-family: inherit;
+    color: rgba(255, 255, 255, 0.35);
+}
+
+/* ============================================================
+   TOAST NOTIFICATIONS
+   ============================================================ */
+
+.toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 9999;
+}
+
+.toast {
+    background: #2b2e3b;
+    color: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.toast-show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.toast-hide {
+    opacity: 0;
+    transform: translateY(8px);
+}
+
+.toast-check {
+    color: #5dd87e;
+    font-size: 14px;
+    font-weight: 700;
 }
