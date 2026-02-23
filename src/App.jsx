@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import NotesPage from "./pages/NotesPage";
 import Toast from "./components/Toast";
+import "./index.css";
 
 const App = () => {
   const [notes, setNotes] = useState([]);

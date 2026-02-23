@@ -88,7 +88,6 @@ body {
    ============================================================ */
 
 .card-header {
-    background-color: #9bd1de;
     border-radius: 8px 8px 0 0;
     display: flex;
     align-items: center;
@@ -182,20 +181,25 @@ body {
    ============================================================ */
 
 .card-body {
-    padding: 1em;
+    padding: 0.8em 1em 1.2em 1em;
     border-radius: 0 0 8px 8px;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    position: relative;
 }
 
 .card-body textarea {
     background-color: inherit;
     border: none;
     width: 100%;
-    height: 100%;
+    flex: 1;
     resize: none;
     font-size: 15px;
     font-family: inherit;
     line-height: 1.55;
     box-sizing: border-box;
+    min-height: 100px;
 }
 
 .card-body textarea::placeholder {
@@ -205,12 +209,25 @@ body {
 textarea:focus {
     background-color: inherit;
     outline: none;
-    width: 100%;
-    height: 100%;
+}
+
+.resizer {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    cursor: nwse-resize;
+    color: rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.resizer:hover {
+    color: rgba(0, 0, 0, 0.4);
 }
 
 /* ============================================================
-   DELETE CONFIRMATION
+   UI COMPONENTS
    ============================================================ */
 
 .delete-confirm {
@@ -262,10 +279,6 @@ textarea:focus {
     color: rgba(0, 0, 0, 0.65);
 }
 
-/* ============================================================
-   EMPTY STATE
-   ============================================================ */
-
 .empty-state {
     position: fixed;
     top: 50%;
@@ -308,26 +321,6 @@ textarea:focus {
     margin: 0 0 12px;
     color: rgba(255, 255, 255, 0.18);
 }
-
-.empty-hint {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.14);
-    margin: 0;
-}
-
-kbd {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 4px;
-    padding: 1px 6px;
-    font-size: 11px;
-    font-family: inherit;
-    color: rgba(255, 255, 255, 0.35);
-}
-
-/* ============================================================
-   TOAST NOTIFICATIONS
-   ============================================================ */
 
 .toast-container {
     position: fixed;

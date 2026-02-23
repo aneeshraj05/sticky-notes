@@ -1,6 +1,6 @@
-import { Trash2, Pin, PinOff, Minus, Plus } from "lucide-react";
+import { Trash2, Pin, PinOff, Minus, Plus, Maximize2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { setNewOffset, setZIndex, bodyParser } from "../utils/utils";
+import { setNewOffset, setZIndex, bodyParser, setNewSize } from "../utils/utils";
 
 /* Returns a human-readable relative time string */
 const timeAgo = (ts) => {
@@ -16,9 +16,10 @@ const timeAgo = (ts) => {
   return new Date(ts).toLocaleDateString();
 };
 
-const NoteCard = ({ note, setNotes, showToast }) => {
+const NoteCard = ({ note, setNotes, showToast, onUpdate, onDelete }) => {
   const body = bodyParser(note.body);
   const [position, setPosition] = useState(JSON.parse(note.position));
+  const [size, setSize] = useState(note.size ? JSON.parse(note.size) : { width: 400, height: "auto" });
   const colors = JSON.parse(note.colors);
 
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -34,9 +35,7 @@ const NoteCard = ({ note, setNotes, showToast }) => {
     autoGrow();
   }, []);
 
-  // Dismiss confirm-delete when clicking outside the card
   useEffect(() => {
-    if (!confirmDelete) return;
     const handler = (e) => {
       if (cardRef.current && !cardRef.current.contains(e.target)) {
         setConfirmDelete(false);
@@ -44,11 +43,11 @@ const NoteCard = ({ note, setNotes, showToast }) => {
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, [confirmDelete]);
+  }, []);
 
   const autoGrow = () => {
     const el = textRef.current;
-    if (!el) return;
+    if (!el || isMinimized) return;
     el.style.height = "auto";
     el.style.height = el.scrollHeight + "px";
   };
@@ -58,6 +57,8 @@ const NoteCard = ({ note, setNotes, showToast }) => {
   const mouseDown = (e) => {
     if (isPinned) return;
     if (e.target.closest(".card-controls")) return;
+    if (e.target.closest(".resizer")) return;
+
     mouse.current = { x: e.clientX, y: e.clientY };
     setZIndex(cardRef.current);
     document.addEventListener("mousemove", mouseMove);
@@ -65,23 +66,39 @@ const NoteCard = ({ note, setNotes, showToast }) => {
   };
 
   const mouseMove = (e) => {
-    const delta = {
-      x: mouse.current.x - e.clientX,
-      y: mouse.current.y - e.clientY,
-    };
+    const delta = { x: mouse.current.x - e.clientX, y: mouse.current.y - e.clientY };
     mouse.current = { x: e.clientX, y: e.clientY };
     const newPos = setNewOffset(cardRef.current, delta);
     setPosition(newPos);
-    setNotes((prev) =>
-      prev.map((n) =>
-        n.$id === note.$id ? { ...n, position: JSON.stringify(newPos) } : n
-      )
-    );
+    onUpdate?.(note.$id, { position: JSON.stringify(newPos) });
   };
 
   const mouseUp = () => {
     document.removeEventListener("mousemove", mouseMove);
     document.removeEventListener("mouseup", mouseUp);
+  };
+
+  /* ---------------- RESIZE ---------------- */
+
+  const onResizeMouseDown = (e) => {
+    e.stopPropagation();
+    mouse.current = { x: e.clientX, y: e.clientY };
+    setZIndex(cardRef.current);
+    document.addEventListener("mousemove", onResizeMouseMove);
+    document.addEventListener("mouseup", onResizeMouseUp);
+  };
+
+  const onResizeMouseMove = (e) => {
+    const delta = { x: mouse.current.x - e.clientX, y: mouse.current.y - e.clientY };
+    mouse.current = { x: e.clientX, y: e.clientY };
+    const newSize = setNewSize(cardRef.current, delta);
+    setSize(newSize);
+    onUpdate?.(note.$id, { size: JSON.stringify(newSize) });
+  };
+
+  const onResizeMouseUp = () => {
+    document.removeEventListener("mousemove", onResizeMouseMove);
+    document.removeEventListener("mouseup", onResizeMouseUp);
   };
 
   /* ---------------- DELETE ---------------- */
@@ -95,116 +112,53 @@ const NoteCard = ({ note, setNotes, showToast }) => {
     e.stopPropagation();
     setIsDeleting(true);
     setTimeout(() => {
-      setNotes((prev) => prev.filter((n) => n.$id !== note.$id));
-      showToast?.("Note deleted");
+      onDelete?.(note.$id);
     }, 280);
   };
 
-  const cancelDelete = (e) => {
-    e.stopPropagation();
-    setConfirmDelete(false);
-  };
+  /* ---------------- CONTENT ---------------- */
 
-  /* ---------------- PIN ---------------- */
-
-  const togglePin = (e) => {
-    e.stopPropagation();
-    const next = !isPinned;
-    setIsPinned(next);
-    setNotes((prev) =>
-      prev.map((n) => (n.$id === note.$id ? { ...n, pinned: next } : n))
-    );
-    showToast?.(next ? "Note pinned" : "Note unpinned");
-  };
-
-  /* ---------------- MINIMIZE ---------------- */
-
-  const toggleMinimize = (e) => {
-    e.stopPropagation();
-    setIsMinimized((prev) => !prev);
-  };
-
-  /* ---------------- TEXT ---------------- */
-
-  const updateText = (value) => {
-    setNotes((prev) =>
-      prev.map((n) =>
-        n.$id === note.$id ? { ...n, body: JSON.stringify(value) } : n
-      )
-    );
+  const handleInput = (e) => {
+    autoGrow();
+    onUpdate?.(note.$id, { body: JSON.stringify(e.target.value) });
   };
 
   return (
     <div
       ref={cardRef}
-      className={`card card-appear ${isDeleting ? "card-deleting" : ""} ${isMinimized ? "card-minimized" : ""
-        }`}
+      className={`card card-appear ${isDeleting ? "card-deleting" : ""} ${isMinimized ? "card-minimized" : ""}`}
       style={{
         backgroundColor: colors.colorBody,
         left: `${position.x}px`,
         top: `${position.y}px`,
+        width: `${size.width}px`,
+        height: isMinimized ? 'auto' : (size.height === 'auto' ? 'auto' : `${size.height}px`),
         position: "absolute",
       }}
     >
-      {/* ── Header ── */}
-      <div
-        className="card-header"
-        style={{
-          backgroundColor: colors.colorHeader,
-          cursor: isPinned ? "default" : undefined,
-        }}
-        onMouseDown={mouseDown}
-      >
-        {/* Left: delete */}
+      <div className="card-header" style={{ backgroundColor: colors.colorHeader, cursor: isPinned ? "default" : undefined }} onMouseDown={mouseDown} >
         <div className="card-controls">
           {confirmDelete ? (
             <div className="delete-confirm">
               <span className="delete-confirm-text">Delete?</span>
-              <button className="delete-confirm-btn yes" onClick={confirmDeleteNote}>
-                Yes
-              </button>
-              <button className="delete-confirm-btn no" onClick={cancelDelete}>
-                No
-              </button>
+              <button className="delete-confirm-btn yes" onClick={(e) => { e.stopPropagation(); confirmDeleteNote(e); }}>Yes</button>
+              <button className="delete-confirm-btn no" onClick={(e) => { e.stopPropagation(); setConfirmDelete(false); }}>No</button>
             </div>
           ) : (
-            <button className="card-action-btn danger" onClick={handleTrashClick} title="Delete note">
-              <Trash2 size={14} strokeWidth={2} />
-            </button>
+            <button className="card-action-btn danger" onClick={handleTrashClick} title="Delete note"><Trash2 size={14} strokeWidth={2} /></button>
           )}
         </div>
-
-        {/* Center: timestamp */}
-        {note.createdAt && (
-          <span className="card-timestamp">{timeAgo(note.createdAt)}</span>
-        )}
-
-        {/* Right: pin + minimize */}
+        {note.createdAt && <span className="card-timestamp">{timeAgo(note.createdAt)}</span>}
         <div className="card-controls card-actions">
-          <button
-            className={`card-action-btn ${isPinned ? "pinned" : ""}`}
-            onClick={togglePin}
-            title={isPinned ? "Unpin" : "Pin note"}
-          >
-            {isPinned
-              ? <PinOff size={14} strokeWidth={2} />
-              : <Pin size={14} strokeWidth={2} />
-            }
+          <button className={`card-action-btn ${isPinned ? "pinned" : ""}`} onClick={(e) => { e.stopPropagation(); onUpdate?.(note.$id, { pinned: !isPinned }); setIsPinned(!isPinned); }} title={isPinned ? "Unpin" : "Pin"}>
+            {isPinned ? <PinOff size={14} /> : <Pin size={14} />}
           </button>
-          <button
-            className="card-action-btn"
-            onClick={toggleMinimize}
-            title={isMinimized ? "Expand" : "Minimize"}
-          >
-            {isMinimized
-              ? <Plus size={14} strokeWidth={2} />
-              : <Minus size={14} strokeWidth={2} />
-            }
+          <button className="card-action-btn" onClick={(e) => { e.stopPropagation(); setIsMinimized(!isMinimized); }} title={isMinimized ? "Expand" : "Minimize"}>
+            {isMinimized ? <Plus size={14} /> : <Minus size={14} />}
           </button>
         </div>
       </div>
 
-      {/* ── Body ── */}
       {!isMinimized && (
         <div className="card-body">
           <textarea
@@ -212,12 +166,12 @@ const NoteCard = ({ note, setNotes, showToast }) => {
             defaultValue={body}
             style={{ color: colors.colorText }}
             onFocus={() => setZIndex(cardRef.current)}
-            placeholder="Type something..."
-            onInput={(e) => {
-              autoGrow();
-              updateText(e.target.value);
-            }}
+            placeholder="Write a note..."
+            onInput={handleInput}
           />
+          <div className="resizer" onMouseDown={onResizeMouseDown}>
+            <Maximize2 size={12} strokeWidth={3} />
+          </div>
         </div>
       )}
     </div>
