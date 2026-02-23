@@ -1,7 +1,10 @@
-import { Plus } from "lucide-react";
+import { Plus, Download, Upload } from "lucide-react";
+import { useRef } from "react";
 import "./side.css";
 
-const SidePalette = ({ colors, selected, onSelect, onAdd, noteCount }) => {
+const SidePalette = ({ colors, selected, onSelect, onAdd, onExport, onImport, noteCount }) => {
+  const fileInputRef = useRef(null);
+
   return (
     <div className="side-palette">
 
@@ -31,6 +34,33 @@ const SidePalette = ({ colors, selected, onSelect, onAdd, noteCount }) => {
           title={c.id.charAt(0).toUpperCase() + c.id.slice(1)}
         />
       ))}
+
+      <div className="palette-divider" />
+
+      {/* Export button */}
+      <div
+        className="palette-btn utility"
+        onClick={onExport}
+        title="Export Notes (JSON)"
+      >
+        <Download size={18} strokeWidth={2} />
+      </div>
+
+      {/* Import button */}
+      <div
+        className="palette-btn utility"
+        onClick={() => fileInputRef.current.click()}
+        title="Import Notes (JSON)"
+      >
+        <Upload size={18} strokeWidth={2} />
+        <input
+          type="file"
+          ref={fileInputRef}
+          style={{ display: "none" }}
+          accept=".json"
+          onChange={onImport}
+        />
+      </div>
 
     </div>
   );

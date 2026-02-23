@@ -8,6 +8,16 @@ export const setNewOffset = (card, delta = { x: 0, y: 0 }) => {
   };
 };
 
+export const setNewSize = (card, delta = { x: 0, y: 0 }) => {
+  const width = card.offsetWidth - delta.x;
+  const height = card.offsetHeight - delta.y;
+
+  return {
+    width: Math.max(200, width),
+    height: Math.max(150, height),
+  };
+};
+
 
 export const setZIndex = (selectedCard) => {
   const cards = document.getElementsByClassName("card");
